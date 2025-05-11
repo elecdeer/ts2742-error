@@ -1,3 +1,4 @@
-export type Version = `subref@${string}.${string}.${string}`;
-
-export type GetVersion = () => Version;
+export type Meta<T> = {
+  name: "subref";
+  value: T;
+};

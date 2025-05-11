@@ -1,5 +1,5 @@
-import { GetVersion } from "./types.js";
+import { Meta } from "./types.js";
 
-export const getVersion: GetVersion = () => {
-  return `subref@1.0.0`;
+export const defineMeta = <T>(meta: Meta<T>) => {
+  return meta;
 };

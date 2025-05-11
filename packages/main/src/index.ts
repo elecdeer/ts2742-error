@@ -1,3 +1,6 @@
-import { getVersionSubRef } from "ref";
+import { wrapDefineMeta } from "ref";
 
-export const aa = getVersionSubRef();
+export const meta = wrapDefineMeta({
+  name: "subref",
+  value: "main",
+});
