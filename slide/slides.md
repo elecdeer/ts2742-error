@@ -369,3 +369,9 @@ class: bg-tlb-yellow
 TypeScriptを共に書いてくれる仲間を募集中です！
 
 https://www.team-lab.com/recruit/
+
+<!-- TODO: sectionの時にfontをboldにしたい -->
+
+<!--
+というか、factの文字サイズを小さくするのが良いのかも
+-->
