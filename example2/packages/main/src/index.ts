@@ -1,5 +1,3 @@
-import { wrappedReturnsInferredSomeComplexType } from "ref";
+import { wrappedReturnsInferredSomeComplexType } from "middle-lib";
 
-export const returnValue: ReturnType<
-  typeof wrappedReturnsInferredSomeComplexType
-> = wrappedReturnsInferredSomeComplexType();
+export const returnValue = wrappedReturnsInferredSomeComplexType();

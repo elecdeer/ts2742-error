@@ -17,6 +17,6 @@
   "license": "MIT",
   "packageManager": "pnpm@10.10.0",
   "dependencies": {
-    "ref": "workspace:*"
+    "middle-lib": "workspace:*"
   }
 }

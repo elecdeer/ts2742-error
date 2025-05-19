@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@iconify-json/simple-icons':
+        specifier: ^1.2.34
+        version: 1.2.34
       '@slidev/cli':
         specifier: ^51.7.0
         version: 51.7.0(@babel/parser@7.27.2)(@nuxt/kit@3.17.3)(@types/markdown-it@14.1.2)(@types/node@22.15.18)(@vue/compiler-sfc@3.5.14)(markdown-it-async@2.2.0)(postcss@8.5.3)(tsx@4.19.4)
@@ -23,6 +26,13 @@ importers:
       vue:
         specifier: ^3.5.14
         version: 3.5.14(typescript@5.8.3)
+    devDependencies:
+      prettier:
+        specifier: ^3.5.3
+        version: 3.5.3
+      prettier-plugin-slidev:
+        specifier: ^1.0.5
+        version: 1.0.5(prettier@3.5.3)
 
 packages:
 
@@ -498,6 +508,9 @@ packages:
   '@iconify-json/ph@1.2.2':
     resolution: {integrity: sha512-PgkEZNtqa8hBGjHXQa4pMwZa93hmfu8FUSjs/nv4oUU6yLsgv+gh9nu28Kqi8Fz9CCVu4hj1MZs9/60J57IzFw==}
 
+  '@iconify-json/simple-icons@1.2.34':
+    resolution: {integrity: sha512-1FRWEA94hSl5zmBogRh6lQL36l7bVTfrl0n5+QJ+WmXmw70RccPT5phqeiSynwo3IhUWKoW2LiajyUMeweXW8g==}
+
   '@iconify-json/svg-spinners@1.2.2':
     resolution: {integrity: sha512-DIErwfBWWzLfmAG2oQnbUOSqZhDxlXvr8941itMCrxQoMB0Hiv8Ww6Bln/zIgxwjDvSem2dKJtap+yKKwsB/2A==}
 
@@ -784,6 +797,10 @@ packages:
 
   '@slidev/client@51.7.0':
     resolution: {integrity: sha512-SGPkxaroyhMeYkICixTFGgGab5+IyVG6NUSYsZ5ZR0hsaj/kRxQSqQ8KUgCt/l/6YRpL2spbPZnkOfomv+ax3g==}
+    engines: {node: '>=18.0.0'}
+
+  '@slidev/parser@0.47.5':
+    resolution: {integrity: sha512-KvqOEhIFuMDu8CjAsehMNKlAnnmAn2TRHiEymc3CMadid05oWa5zgTxqEyMxUl2rjWpYs3A1yDiendZsGYs3HA==}
     engines: {node: '>=18.0.0'}
 
   '@slidev/parser@51.7.0':
@@ -2549,6 +2566,11 @@ packages:
   pptxgenjs@4.0.0:
     resolution: {integrity: sha512-iXpmNbivy64cxb4W05nDpUBkhoa73qCmvDZ2CTXYhvvX7LkJKAs6wWEEWlm3OSVJdaZtjY+AAmWgcmwNH8fSkA==}
 
+  prettier-plugin-slidev@1.0.5:
+    resolution: {integrity: sha512-1xaKzOAX17QAcn1roUgQIAfeio3HPYYefCgzxh6Bzk+5rJJxq0I8HUhLrUyv9nCpIP6e9CDv/yDQSdEeqqRUuA==}
+    peerDependencies:
+      prettier: ^3.2.4
+
   prettier@3.5.3:
     resolution: {integrity: sha512-QQtaxnoDJeAkDvDKWCLiwIXkTgRhwYDEQCghU9Z6q03iyek/rxRh/2lC3HB7P8sWT2xC/y5JDctPLBIGzHKbhw==}
     engines: {node: '>=14'}
@@ -3605,6 +3627,10 @@ snapshots:
     dependencies:
       '@iconify/types': 2.0.0
 
+  '@iconify-json/simple-icons@1.2.34':
+    dependencies:
+      '@iconify/types': 2.0.0
+
   '@iconify-json/svg-spinners@1.2.2':
     dependencies:
       '@iconify/types': 2.0.0
@@ -4077,6 +4103,11 @@ snapshots:
       - vite
       - vue-template-compiler
       - vue-template-es2015-compiler
+
+  '@slidev/parser@0.47.5':
+    dependencies:
+      '@slidev/types': 0.47.5
+      js-yaml: 4.1.0
 
   '@slidev/parser@51.7.0(@nuxt/kit@3.17.3)(@vue/compiler-sfc@3.5.14)(markdown-it-async@2.2.0)(postcss@8.5.3)(typescript@5.8.3)(vite@6.3.5(@types/node@22.15.18)(jiti@2.4.2)(tsx@4.19.4)(yaml@2.8.0))':
     dependencies:
@@ -6325,6 +6356,11 @@ snapshots:
       https: 1.0.0
       image-size: 1.2.1
       jszip: 3.10.1
+
+  prettier-plugin-slidev@1.0.5(prettier@3.5.3):
+    dependencies:
+      '@slidev/parser': 0.47.5
+      prettier: 3.5.3
 
   prettier@3.5.3: {}
 

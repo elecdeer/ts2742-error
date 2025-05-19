@@ -1,73 +1,116 @@
 ---
 theme: neversink
-color: amber-light
+class: bg-tlb-yellow
+fonts:
+  # 標準テキスト用
+  sans: Noto Sans JP
+  # UnoCSS で `font-serif` クラスを指定したとき用
+  serif: Noto Serif JP
+  # コードブロック用
+  mono: Fira Code
 ---
 
 # 推論された型の移植性エラー<br>`TS2742`に挑む
 
+tskaigi 2025 LT @elecdeer
+
+<style>
+  code {
+    /* --uno: 'bg-slate-900 !'; */
+    /* background-color: var(--) */
+
+    /* @apply bg-slate-900; */
+
+    --neversink-fg-code-color:rgb(255, 255, 255);
+    --neversink-bg-code-color:rgb(26, 26, 43);
+  }
+</style>
+
+---
+layout: side-title
+titlewidth: is-4-8
+align: cm-cm
 ---
 
-# elecdeer
+:: title ::
 
-`${自己紹介をここに}`
+<div class="flex justify-center items-center">
+   <img src="/deerIconDark.png" alt="my deer icon">
+</div>
 
+:: content ::
+
+<div class="text-4xl my-8">elecdeer</div>
+
+<div class="flex flex-col items-center gap-2 my-8">
+  <div>
+    <simple-icons-x /> @elecdeerdev
+  </div>
+  <div>
+    <simple-icons-twitter /> @elecdeer
+  </div>
+</div>
+
+<div class="my-8">
+チームラボ フロントエンド班
+</div>
+
+---
+layout: section
+align: center
+class: bg-tlb-yellow
 ---
 
 # TS2742エラー見たことありますか？
 
 ---
 
-<!-- TODO: example2の例に差し替え -->
+![](/ts2742-ide.png)
 
-> `The inferred type of 'ExtendedSomeComponent' cannot be named without a reference to ''../../ref/node_modules/csstype/index.js'. This is likely not portable. A type annotation is necessary. ts(2742)`
+> `The inferred type of 'returnValue' cannot be named without a reference to ''../../middle-lib/node_modules/base-lib/dist/index.js'. This is likely not portable. A type annotation is necessary. ts(2742)`
 
-> `'ExtendedSomeComponent' の推論された型には、'../../ref/node_modules/csstype/index.js' への参照なしで名前を付けることはできません。これは、移植性がない可能性があります。型の注釈が必要です。ts(2742)`
+> `'returnValue' の推論された型には、'../../middle-lib/node_modules/base-lib/dist/index.js' への参照なしで名前を付けることはできません。これは、移植性がない可能性があります。型の注釈が必要です。ts(2742)`
 
-```ts
-import { SomeComponent } from "ref";
-
-export const ExtendedSomeComponent = (
-  //         ~~~~~~~~~~~~~~~~~~~~~
-  props: ComponentProps<SomeComponent> & {
-    enable: boolean;
-  }
-) => {
-  // ...
-};
-```
-
-🤔
+<div class="text-4xl text-center my-8">?</div>
 
 ---
 
 # 実際の開発で見た例
 
-`@mantine/core`経由での`csstype`への間接参照
+`@mantine/core`の`createPolymorphicComponent`を使ったら、
 
-- `createPolymorphicComponent`が怪しい
+`'SomeComponent'` の推論された型には、`'○○○/csstype/○○○○○○○'`への参照なしで名前を付けることはできません。
 
-<!-- example4に似た例 -->
+<br>
 
-`@storybook/experimental-addon-test`経由での`@vitest/spy`への間接参照
+`@storybook/experimental-addon-test`の`fn`をラップした関数を作ったら、
 
-- `fn`の型をこねくり回していたら出た
+`'extendedFn'`の推論された型には、`@vitest/spy`への参照なしで名前を付けることはできません。
 
-<!-- このページ場所とかそもそも要らないかとか要検討 -->
+---
+layout: section
+align: center
+class: bg-tlb-yellow
+---
+
+# どういうエラーなのか？
 
 ---
 
 # このエラーは何なのか
 
-TypeScriptがd.tsファイルを生成する際に、間接的に参照される型を解決できない場合に発生する。
+TypeScriptがd.tsファイルを生成する際に、**間接的に参照される型**を解決できない場合に発生する。
 
 https://github.com/microsoft/TypeScript/pull/58176#issuecomment-2052698294
 が詳しい。
+
+![](/ryan-cavanaugh-comment.png)
 
 ---
 
 # tscのd.ts出力を考える
 
-パッケージの依存関係は以下の様になっているとする
+パッケージの依存関係は以下のようになっているとする
 
 ```
 main
@@ -75,13 +118,18 @@ main
     └── base-lib@2.0.0
 ```
 
-mainはbase-libには直接依存していない。いわゆる推移的依存関係（transitive dependency）にある。
+**mainはbase-libには直接依存していない。**いわゆる推移的依存関係（transitive dependency）にある。
 
 ---
 
-このとき、pnpmのような厳格な依存関係を持つパッケージマネージャーを使っていると、以下の様なnode_modulesの構成になる。
-（他にも依存パッケージがあれば、この限りではないが...）
+# node_modulesの構造はパッケージマネージャによって異なる
+
+例えば、pnpmのような厳格な依存関係を持つパッケージマネージャーの場合はこう👇。
+（他にもdependenciesやpeerDependenciesがあれば、さらに別の構造になり得る）
+
 npmはデフォルトでhoistingを行うので、node_modulesの構成は異なる。
+
+つまり、**tscはnode_modulesの構造に依存した出力をしてはいけない！**
 
 ```
 .
@@ -114,10 +162,14 @@ export type SomeComplexType = {
   nest?: SomeComplexType;
 };
 export declare const returnsInferredSomeComplexType: () => SomeComplexType;
-
-// middle-lib/index.d.ts
-export declare const wrappedReturnsInferredSomeComplexType: () => import("subref").SomeComplexType;
 ```
+
+```ts
+// middle-lib/index.d.ts
+export declare const wrappedReturnsInferredSomeComplexType: () => import("base-lib").SomeComplexType;
+```
+
+middle-lib/index.d.tsは`base-lib`に依存している
 
 ---
 
@@ -147,26 +199,31 @@ export const mainValue: ???;
 ```ts
 import { getBaseLibValue } from "middle-lib";
 import type { SomeComplexType } from "../node_modules/middle-lib/node_modules/base-lib/index.js";
-// node_modulesの構造はパッケージマネージャによって異なるのでNG!
 
 export const mainValue: SomeComplexType;
 ```
+
+node_modulesの構造はパッケージマネージャによって異なるのでNG
 
 ```ts
 import { getBaseLibValue } from "middle-lib";
 import type { SomeComplexType } from "middle-lib/node_modules/base-lib/index.js";
-// middle-libの下のnode_modulesに依存するのも（動く可能性はあるが）NG
-// package.jsonのexportsフィールドによってはそもそも参照不可
 
 export const mainValue: SomeComplexType;
 ```
 
+middle-libの下のnode_modulesに依存するのも（動く可能性はあるが）NG
+
+package.jsonのexportsフィールドがある場合は参照不可
+
 ---
+
+# これは...?
 
 ```ts
 import { getBaseLibValue } from "middle-lib";
 import type { SomeComplexType } from "base-lib";
-// これは...?
+
 // 一見よさそうに見えるが、middle-lib --> base-libとmain --> base-libの指す先が同じとは限らない
 // 別のバージョンに依存していた場合は、実装と型が乖離して壊れる可能性がある
 
@@ -175,13 +232,19 @@ export const mainValue: SomeComplexType;
 
 tscからするとお手上げ🙌
 
--> "移植性がない"として`TS2742`エラーを発生させる
+-> **移植性がない**として`TS2742`エラーを発生させる
+
+---
+layout: section
+align: center
+class: bg-tlb-yellow
+---
+
+# われわれはどうするべきなのか
 
 ---
 
-# どうするべきなのか
-
-エラーの言うとおり、型注釈を明示的に書く。
+# エラーの言うとおり、型注釈を明示的に書く。
 
 ```ts
 import { wrappedReturnsInferredSomeComplexType } from "ref";
@@ -195,12 +258,14 @@ export const returnValue: ReturnType<
 
 ---
 
+# 型注釈を書きたくないときもある
+
 関数の型にgenericsがあり、引数によって返り値の型が変わる場合は望ましくない...
 
 ```ts
 const validator: () => { name: string } = createValidator(
   //                        ^ ここは書きたくないわけで
-  z.object({ name: z.string() })
+  z.object({ name: z.string() }),
 );
 ```
 
@@ -220,12 +285,16 @@ mainのd.ts出力で、こうできれば万事解決である
 -> middle-libからSomeComplexTypeがexportされていれば解決
 
 ---
+layout: section
+align: center
+class: bg-tlb-yellow
+---
 
 # 基本的にライブラリ側で修正されるのが望ましい
 
 ---
 
-# ライブラリ側の修正
+# ライブラリ側(middle-lib)の修正
 
 - 型をたどれるように再exportする
 - TS5.5以上に上げてみる
@@ -233,6 +302,8 @@ mainのd.ts出力で、こうできれば万事解決である
   - TS5.4以前でTS2742エラーが発生している場合、偽陽性かもしれない
 
 ---
+
+# ライブラリ側で気づきやすくする
 
 - tsconfigの`isolatedDeclarations`を有効にする
   - ダメなパターンを実装しにくくなる
@@ -248,18 +319,25 @@ https://github.com/microsoft/TypeScript/issues/47663#issuecomment-1519138189
 も参考に
 
 ---
+layout: section
+align: center
+class: bg-tlb-yellow
+---
 
-# とはいってもライブラリを簡単に修正できるわけではない
+# とはいってもライブラリを簡単に修正できないときもある
 
-ユーザ側（main）のworkaround
+---
 
-- tsconfigの`declaration`を`false`にする
-  - 有効なd.tsを出力できないからエラーになっているので、そもそも出力しなければエラーにならない
+# ユーザ側（main）のworkaround
+
 - 型注釈を書いて型推論を避ける
   - 型推論に意義がある場合はあんまりやりたくない
+- tsconfigの`declaration`を`false`にする
+  - 有効なd.tsを出力できないからエラーになっているので、そもそも出力しなければエラーにならない
 - 直接依存に追加してimportする
-  - mainのどこかに`base-lib`への参照がある場合には、それと同じ先に解決される
-  - ライブラリ側が依存しているバージョンと別のバージョンに解決してしまう可能性があるので注意が必要
+  - `import type {} from "base-lib"`をmainのどこかに書く
+  - コンパイル対象のどこかに`base-lib`への参照があれば、それと同じ先に解決される
+  - ライブラリ側が依存しているバージョンと別のバージョンに解決してしまう可能性があるので要注意
 - pnpm patch
 
 ---
@@ -275,3 +353,19 @@ https://github.com/microsoft/TypeScript/issues/47663#issuecomment-1519138189
 - https://github.com/microsoft/TypeScript/pull/58176#issuecomment-2052698294
 - https://github.com/microsoft/TypeScript/issues/47663#issuecomment-1519138189
 - https://github.com/microsoft/TypeScript/issues/48212
+
+---
+layout: section
+align: center
+class: bg-tlb-yellow
+---
+
+![](/teamlab-frontend.png)
+
+<br>
+
+# We're Hiring!
+
+TypeScriptを共に書いてくれる仲間を募集中です！
+
+https://www.team-lab.com/recruit/

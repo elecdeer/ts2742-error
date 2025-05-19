@@ -18,19 +18,19 @@ importers:
         specifier: ^5.5.0
         version: 5.8.3
 
+  packages/base-lib: {}
+
   packages/main:
     dependencies:
-      ref:
+      middle-lib:
         specifier: workspace:*
-        version: link:../ref
+        version: link:../middle-lib
 
-  packages/ref:
+  packages/middle-lib:
     dependencies:
-      subref:
+      base-lib:
         specifier: workspace:*
-        version: link:../subref
-
-  packages/subref: {}
+        version: link:../base-lib
 
 packages:
 
