@@ -1,5 +1,6 @@
 ---
 theme: neversink
+transition: slide-left
 class: bg-tlb-yellow
 fonts:
   # 標準テキスト用
@@ -12,7 +13,7 @@ fonts:
 
 # 推論された型の移植性エラー<br>`TS2742`に挑む
 
-tskaigi 2025 LT @elecdeer
+TSKaigi 2025 LT @elecdeer
 
 <style>
   code {
@@ -25,6 +26,10 @@ tskaigi 2025 LT @elecdeer
     --neversink-bg-code-color:rgb(26, 26, 43);
   }
 </style>
+
+<!--
+（全体）文字サイズを上げたい
+-->
 
 ---
 layout: side-title
@@ -47,13 +52,19 @@ align: cm-cm
     <simple-icons-x /> @elecdeerdev
   </div>
   <div>
-    <simple-icons-twitter /> @elecdeer
+    <simple-icons-github /> @elecdeer
   </div>
 </div>
 
 <div class="my-8">
 チームラボ フロントエンド班
 </div>
+
+<!--
+00:30
+
+会場から5分くらいの所にあるチームラボという会社でフロントエンドエンジニアをやっています
+-->
 
 ---
 layout: section
@@ -73,19 +84,29 @@ class: bg-tlb-yellow
 
 <div class="text-4xl text-center my-8">?</div>
 
+<!--
+移植性とかいう単語TypeScriptで初めて見た
+-->
+
 ---
 
 # 実際の開発で見た例
 
 `@mantine/core`の`createPolymorphicComponent`を使ったら、
 
-`'SomeComponent'` の推論された型には、`'○○○/csstype/○○○○○○○'`への参照なしで名前を付けることはできません。
+-> `'SomeComponent'の推論された型には、'○○○/csstype/○○○○○○○'への参照なしで名前を付けることはできません。`
 
 <br>
 
 `@storybook/experimental-addon-test`の`fn`をラップした関数を作ったら、
 
-`'extendedFn'`の推論された型には、`@vitest/spy`への参照なしで名前を付けることはできません。
+-> `'extendedFn'の推論された型には、@vitest/spyへの参照なしで名前を付けることはできません。`
+
+<!--
+1:00位？
+
+この辺削る？
+-->
 
 ---
 layout: section
@@ -94,6 +115,10 @@ class: bg-tlb-yellow
 ---
 
 # どういうエラーなのか？
+
+<!--
+このTS2742エラーはどういうエラーなのでしょうか
+-->
 
 ---
 
@@ -106,11 +131,15 @@ https://github.com/microsoft/TypeScript/pull/58176#issuecomment-2052698294
 
 ![](/ryan-cavanaugh-comment.png)
 
+<!--
+本題の部分をもっと大きくしたいかも
+-->
+
 ---
 
 # tscのd.ts出力を考える
 
-パッケージの依存関係は以下のようになっているとする
+パッケージの依存関係は以下のようになっているとする。
 
 ```
 main
@@ -118,7 +147,11 @@ main
     └── base-lib@2.0.0
 ```
 
-**mainはbase-libには直接依存していない。**いわゆる推移的依存関係（transitive dependency）にある。
+**mainはbase-libには直接依存していない。** いわゆる推移的依存関係（transitive dependency）
+
+<!--
+例として以下のような依存関係のパッケージを考えます
+-->
 
 ---
 
@@ -150,32 +183,43 @@ npmはデフォルトでhoistingを行うので、node_modulesの構成は異な
         └── index.ts
 ```
 
+<!--
+次に、pnpm installしたときにできる実際のファイル構造を考えます
+
+詳しく説明する必要はなさそう
+最後の分だけでぶっちゃけよい
+-->
+
 ---
 
 # base-libとmiddle-libのd.ts
 
+base-lib/index.d.ts
+
 ```ts
-// base-lib/index.d.ts
 export type SomeComplexType = {
-  // （中身は割とどうでも良い）
+  // （中身は余り関係無いが、単純すぎるとインライン化されるみたい）
   num: number;
   nest?: SomeComplexType;
 };
 export declare const returnsInferredSomeComplexType: () => SomeComplexType;
 ```
 
+<br>
+
+middle-lib/index.d.ts
+
 ```ts
-// middle-lib/index.d.ts
 export declare const wrappedReturnsInferredSomeComplexType: () => import("base-lib").SomeComplexType;
 ```
 
-middle-lib/index.d.tsは`base-lib`に依存している
+`base-lib`に依存している
 
 ---
 
 # mainパッケージでの問題
 
-mainパッケージで以下の様なコードを書いたとする
+mainパッケージで以下の様なコードを書いたとする。
 
 ```ts
 import { wrappedReturnsInferredSomeComplexType } from "middle-lib";
@@ -192,6 +236,18 @@ import { wrappedReturnsInferredSomeComplexType } from "middle-lib";
 export const mainValue: ???;
 ```
 
+<div class="my-16" />
+
+```
+main
+└── middle-lib@1.0.0
+    └── base-lib@2.0.0
+```
+
+<!--
+この辺追いつかない気がするので、前のページを引用しておきたい
+-->
+
 ---
 
 # ダメな例
@@ -204,6 +260,8 @@ export const mainValue: SomeComplexType;
 ```
 
 node_modulesの構造はパッケージマネージャによって異なるのでNG
+
+<div class="my-16" />
 
 ```ts
 import { getBaseLibValue } from "middle-lib";
@@ -224,15 +282,24 @@ package.jsonのexportsフィールドがある場合は参照不可
 import { getBaseLibValue } from "middle-lib";
 import type { SomeComplexType } from "base-lib";
 
-// 一見よさそうに見えるが、middle-lib --> base-libとmain --> base-libの指す先が同じとは限らない
-// 別のバージョンに依存していた場合は、実装と型が乖離して壊れる可能性がある
-
 export const mainValue: SomeComplexType;
 ```
+
+一見よさそうに見えるが、middle-lib --> base-libとmain --> base-libの指す先が同じとは限らない
+
+別のバージョンに依存していた場合は、実装と型が乖離して壊れる可能性がある
+
+<div class="my-16" />
 
 tscからするとお手上げ🙌
 
 -> **移植性がない**として`TS2742`エラーを発生させる
+
+<!--
+2:30位？
+
+依存関係の図が欲しいかも
+-->
 
 ---
 layout: section
@@ -240,11 +307,11 @@ align: center
 class: bg-tlb-yellow
 ---
 
-# われわれはどうするべきなのか
+# どうするべきなのか
 
 ---
 
-# エラーの言うとおり、型注釈を明示的に書く。
+# エラーの言うとおり、型注釈を明示的に書く
 
 ```ts
 import { wrappedReturnsInferredSomeComplexType } from "ref";
@@ -255,6 +322,12 @@ export const returnValue: ReturnType<
 ```
 
 これで解決!...🤔
+
+<!--
+後のスライドとの重複
+
+ユーザ側の対策と上手いことマージしたい
+-->
 
 ---
 
@@ -318,6 +391,12 @@ class: bg-tlb-yellow
 https://github.com/microsoft/TypeScript/issues/47663#issuecomment-1519138189
 も参考に
 
+<!--
+全部読む暇はなさそう
+
+見出しだけ読むで良さそう
+-->
+
 ---
 layout: section
 align: center
@@ -340,6 +419,12 @@ class: bg-tlb-yellow
   - ライブラリ側が依存しているバージョンと別のバージョンに解決してしまう可能性があるので要注意
 - pnpm patch
 
+<!--
+全部読む暇はなさそう
+
+見出しだけ読むで良さそう
+-->
+
 ---
 
 # まとめ
@@ -353,6 +438,10 @@ class: bg-tlb-yellow
 - https://github.com/microsoft/TypeScript/pull/58176#issuecomment-2052698294
 - https://github.com/microsoft/TypeScript/issues/47663#issuecomment-1519138189
 - https://github.com/microsoft/TypeScript/issues/48212
+
+<!--
+自分で調べるときはこの辺が参考に
+-->
 
 ---
 layout: section
