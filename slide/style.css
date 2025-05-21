@@ -1,3 +1,7 @@
 .bg-tlb-yellow {
   background-color: #fbe566;
 }
+
+.codeblock-large {
+  --slidev-code-font-size: 16px;
+}

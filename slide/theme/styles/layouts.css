@@ -1,9 +1,19 @@
 .slidev-layout {
+  p {
+    @apply text-xl;
+  }
+
   h1 + p {
     @apply -mt-2 opacity-50 mb-4;
   }
 
-  p + h2, ul + h2, table + h2 {
+  h1 + h2 {
+    @apply mt-6;
+  }
+
+  p + h2,
+  ul + h2,
+  table + h2 {
     @apply mt-10;
   }
 
@@ -12,7 +22,7 @@
   }
 
   h2 {
-    @apply text-3xl;
+    @apply text-3xl mb-4;
   }
 
   h3 {
@@ -45,7 +55,6 @@
   }
 }
 
-
 .slidev-layout.fact {
   @apply text-center grid h-full;
   h1 {
@@ -71,6 +80,6 @@
 }
 .slidev-layout.section {
   h1 {
-    @apply text-6xl font-500 leading-20;
+    @apply text-6xl font-600 leading-20;
   }
 }

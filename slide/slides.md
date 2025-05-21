@@ -1,5 +1,5 @@
 ---
-theme: neversink
+theme: ./theme
 transition: slide-left
 class: bg-tlb-yellow
 fonts:
@@ -82,7 +82,7 @@ class: bg-tlb-yellow
 
 > `'returnValue' の推論された型には、'../../middle-lib/node_modules/base-lib/dist/index.js' への参照なしで名前を付けることはできません。これは、移植性がない可能性があります。型の注釈が必要です。ts(2742)`
 
-<div class="text-4xl text-center my-8">?</div>
+<div class="text-4xl text-center my-4">?</div>
 
 <!--
 移植性とかいう単語TypeScriptで初めて見た
@@ -141,10 +141,14 @@ https://github.com/microsoft/TypeScript/pull/58176#issuecomment-2052698294
 
 パッケージの依存関係は以下のようになっているとする。
 
-```
-main
-└── middle-lib@1.0.0
-    └── base-lib@2.0.0
+```mermaid
+flowchart LR
+  main("main")
+  middle("middle-lib")
+  base("base-lib")
+
+  main --> middle
+  middle --> base
 ```
 
 **mainはbase-libには直接依存していない。** いわゆる推移的依存関係（transitive dependency）
@@ -153,11 +157,10 @@ main
 例として以下のような依存関係のパッケージを考えます
 -->
 
----
-
+<!--
 # node_modulesの構造はパッケージマネージャによって異なる
 
-例えば、pnpmのような厳格な依存関係を持つパッケージマネージャーの場合はこう👇。
+例えば、pnpmのような厳格な依存関係を持つパッケージマネージャーの場合はこう👇。<br>
 （他にもdependenciesやpeerDependenciesがあれば、さらに別の構造になり得る）
 
 npmはデフォルトでhoistingを行うので、node_modulesの構成は異なる。
@@ -182,19 +185,15 @@ npmはデフォルトでhoistingを行うので、node_modulesの構成は異な
     └── src/
         └── index.ts
 ```
-
-<!--
-次に、pnpm installしたときにできる実際のファイル構造を考えます
-
-詳しく説明する必要はなさそう
-最後の分だけでぶっちゃけよい
 -->
 
+---
+class: codeblock-large
 ---
 
 # base-libとmiddle-libのd.ts
 
-base-lib/index.d.ts
+### base-lib/index.d.ts
 
 ```ts
 export type SomeComplexType = {
@@ -207,14 +206,41 @@ export declare const returnsInferredSomeComplexType: () => SomeComplexType;
 
 <br>
 
-middle-lib/index.d.ts
+### middle-lib/index.d.ts
 
+<!-- prettier-ignore -->
 ```ts
-export declare const wrappedReturnsInferredSomeComplexType: () => import("base-lib").SomeComplexType;
+export declare const wrappedReturnsInferredSomeComplexType: 
+  () => import("base-lib").SomeComplexType;
 ```
 
 `base-lib`に依存している
 
+```mermaid {theme: 'neutral', scale: 0.7}
+flowchart LR
+  subgraph MainProject["main"]
+    main("index.ts")
+  end
+
+  subgraph MiddleLib["middle-lib"]
+    mid-dts("index.d.ts")
+    mid-js("index.js")
+  end
+  style mid-dts fill:#ffe066, stroke:#b59f00, stroke-width:2px
+
+  subgraph BaseLib["base-lib"]
+    base-dts("index.d.ts")
+    base-js("index.js")
+  end
+  style base-dts fill:#ffe066, stroke:#b59f00, stroke-width:2px
+
+  MainProject --> MiddleLib
+  MiddleLib --> BaseLib
+
+```
+
+---
+class: codeblock-large
 ---
 
 # mainパッケージでの問題
@@ -238,30 +264,53 @@ export const mainValue: ???;
 
 <div class="my-16" />
 
-```
-main
-└── middle-lib@1.0.0
-    └── base-lib@2.0.0
+```mermaid {theme: 'neutral', scale: 0.7}
+flowchart LR
+  subgraph MainProject["main"]
+    direction LR
+    main("index.ts")
+    mainDts("index.d.ts")
+      style mainDts stroke-dasharray: 5 5
+  end
+  style main fill:#ffe066, stroke:#b59f00, stroke-width:2px
+
+  subgraph MiddleLib["middle-lib"]
+    mid-dts("index.d.ts")
+    mid-js("index.js")
+  end
+  subgraph BaseLib["base-lib"]
+    base-dts("index.d.ts")
+    base-js("index.js")
+  end
+
+  MainProject --> MiddleLib
+  MiddleLib --> BaseLib
+
+  main --> mainDts
+
+
 ```
 
-<!--
-この辺追いつかない気がするので、前のページを引用しておきたい
--->
-
+---
+class: codeblock-large
 ---
 
 # ダメな例
 
+### mainパッケージ基準の相対パスで指定
+
+<!-- prettier-ignore -->
 ```ts
 import { getBaseLibValue } from "middle-lib";
-import type { SomeComplexType } from "../node_modules/middle-lib/node_modules/base-lib/index.js";
+import type { SomeComplexType } from 
+  "../node_modules/middle-lib/node_modules/base-lib/index.js";
 
 export const mainValue: SomeComplexType;
 ```
 
-node_modulesの構造はパッケージマネージャによって異なるのでNG
+<div class="my-8" />
 
-<div class="my-16" />
+### middle-libの内部ディレクトリを参照
 
 ```ts
 import { getBaseLibValue } from "middle-lib";
@@ -270,10 +319,14 @@ import type { SomeComplexType } from "middle-lib/node_modules/base-lib/index.js"
 export const mainValue: SomeComplexType;
 ```
 
-middle-libの下のnode_modulesに依存するのも（動く可能性はあるが）NG
+<div class="my-8" />
 
-package.jsonのexportsフィールドがある場合は参照不可
+-> node_modulesの構造はパッケージマネージャによって異なるのでNG
 
+大まかには、hoistingするかどうかで変わる
+
+---
+class: codeblock-large
 ---
 
 # これは...?
@@ -289,7 +342,17 @@ export const mainValue: SomeComplexType;
 
 別のバージョンに依存していた場合は、実装と型が乖離して壊れる可能性がある
 
-<div class="my-16" />
+```mermaid {scale: 0.8}
+flowchart LR
+  main("main")
+  middle("middle-lib")
+  baseV1("base-lib@1")
+  baseV2("base-lib@2")
+
+  main --> middle
+  middle --> baseV1
+  main --> baseV2
+```
 
 tscからするとお手上げ🙌
 
@@ -310,8 +373,12 @@ class: bg-tlb-yellow
 # どうするべきなのか
 
 ---
+class: codeblock-large
+---
 
-# エラーの言うとおり、型注釈を明示的に書く
+# ユーザ側（main）の対策
+
+## エラーの言うとおり、型注釈を明示的に書く
 
 ```ts
 import { wrappedReturnsInferredSomeComplexType } from "ref";
@@ -323,17 +390,11 @@ export const returnValue: ReturnType<
 
 これで解決!...🤔
 
-<!--
-後のスライドとの重複
+<div class="my-8" />
 
-ユーザ側の対策と上手いことマージしたい
--->
+<v-click>
 
----
-
-# 型注釈を書きたくないときもある
-
-関数の型にgenericsがあり、引数によって返り値の型が変わる場合は望ましくない...
+型推論が便利なときは書きたくない...
 
 ```ts
 const validator: () => { name: string } = createValidator(
@@ -344,52 +405,24 @@ const validator: () => { name: string } = createValidator(
 
 あと単に冗長
 
----
-
-# そもそもとして
-
-```ts
-import { getBaseLibValue, SomeComplexType } from "middle-lib";
-export const mainValue: SomeComplexType;
-```
-
-mainのd.ts出力で、こうできれば万事解決である
-
--> middle-libからSomeComplexTypeがexportされていれば解決
-
----
-layout: section
-align: center
-class: bg-tlb-yellow
----
-
-# 基本的にライブラリ側で修正されるのが望ましい
+</v-click>
 
 ---
 
-# ライブラリ側(middle-lib)の修正
+# ユーザ側（main）のworkaround
 
-- 型をたどれるように再exportする
+- tsconfigの`declaration`を`false`にする
+  - 有効なd.tsを出力できないからエラーになっているので、そもそも出力しなければエラーにならない
+- 直接依存に追加してimportする
+  - `import type {} from "base-lib"`をmainのどこかに書く
+  - コンパイル対象のどこかに`base-lib`への参照があれば、それと同じ先に解決される
+  - ライブラリ側が依存しているバージョンと別のバージョンに解決してしまう可能性があるので要注意
 - TS5.5以上に上げてみる
-  - https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-5.html#consulting-packagejson-dependencies-for-declaration-file-generation
+  - [Consulting
+    package.json
+    Dependencies for Declaration File Generation](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-5-5.html#consulting-packagejson-dependencies-for-declaration-file-generation)
   - TS5.4以前でTS2742エラーが発生している場合、偽陽性かもしれない
-
----
-
-# ライブラリ側で気づきやすくする
-
-- tsconfigの`isolatedDeclarations`を有効にする
-  - ダメなパターンを実装しにくくなる
-    - 全てのパターンを防げるわけでは無さそう？
-  - 明示的な型指定が強制されるので、大抵の場合はライブラリ側でエラーになる
-- 不適切なビルドを修正する
-  - 本来ライブラリ側でTS2742エラー（あるいはTS4023）が出るはずなのに、すり抜ける事がある
-    - package.jsonのexportsやesm/cjs問題も影響していそうだが、正直よく分からない
-  - tscの出力をそのままpublishしていないライブラリでありがち？
-  - `arethetypeswrong`でチェックしてみる
-
-https://github.com/microsoft/TypeScript/issues/47663#issuecomment-1519138189
-も参考に
+- 後述の対策をpnpm patch
 
 <!--
 全部読む暇はなさそう
@@ -403,21 +436,50 @@ align: center
 class: bg-tlb-yellow
 ---
 
-# とはいってもライブラリを簡単に修正できないときもある
+# ライブラリ側の修正の方が望ましい
+
+---
+class: codeblock-large
+---
+
+# そもそもとして
+
+```ts
+import { getBaseLibValue, SomeComplexType } from "middle-lib";
+
+export const mainValue: SomeComplexType;
+```
+
+mainのd.ts出力で、こうできれば万事解決である
+
+-> **middle-libからSomeComplexTypeが再exportされていればよい**
+
+<v-click>
+
+<div class="text-4xl text-center my-8">😸</div>
+
+</v-click>
 
 ---
 
-# ユーザ側（main）のworkaround
+# ライブラリ側の実装で事前に気づくことはできるのか
 
-- 型注釈を書いて型推論を避ける
-  - 型推論に意義がある場合はあんまりやりたくない
-- tsconfigの`declaration`を`false`にする
-  - 有効なd.tsを出力できないからエラーになっているので、そもそも出力しなければエラーにならない
-- 直接依存に追加してimportする
-  - `import type {} from "base-lib"`をmainのどこかに書く
-  - コンパイル対象のどこかに`base-lib`への参照があれば、それと同じ先に解決される
-  - ライブラリ側が依存しているバージョンと別のバージョンに解決してしまう可能性があるので要注意
-- pnpm patch
+-> **TS5.8時点では完全なチェックはできないが、ある程度防ぐ方法はある**
+
+- tsconfigの`isolatedDeclarations`を有効にする
+  - ダメなパターンを実装しにくくなる
+    - 全てのパターンを防げるわけでは無さそう？
+  - 明示的な型指定が強制されるので、大抵の場合はライブラリ側でエラーになる
+- 不適切なビルドを修正する
+  - 本来ライブラリ側でTS2742エラー（あるいはTS4023）が出るはずなのに、すり抜ける事がある
+    - package.jsonのexportsやesm/cjs問題も影響していそうだが、正直よく分からない
+  - tscの出力をそのままpublishしていないライブラリでありがち？
+  - `arethetypeswrong`でチェックしてみる
+
+<div class="text-md">
+https://github.com/microsoft/TypeScript/issues/47663#issuecomment-1519138189
+も参考に
+</div>
 
 <!--
 全部読む暇はなさそう
@@ -433,6 +495,10 @@ class: bg-tlb-yellow
 - ライブラリ側で修正するのが望ましい
   - ユーザ側でのworkaroundもあるが、その方が健全
 
+## TS2742が出る再現例
+
+- https://github.com/elecdeer/ts2742-error
+
 ## 参考になるissueとか
 
 - https://github.com/microsoft/TypeScript/pull/58176#issuecomment-2052698294
@@ -446,21 +512,29 @@ class: bg-tlb-yellow
 ---
 layout: section
 align: center
-class: bg-tlb-yellow
+# class: bg-tlb-yellow
 ---
 
 ![](/teamlab-frontend.png)
 
 <br>
 
+<div class="grid grid-cols-[1fr_auto] gap-4">
+  <div class="flex flex-col items-center">
+
 # We're Hiring!
 
-TypeScriptを共に書いてくれる仲間を募集中です！
+TypeScriptを共に書いてくれるメンバーを募集中です！
 
-https://www.team-lab.com/recruit/
+サマーインターンシップも応募受付中！
 
-<!-- TODO: sectionの時にfontをboldにしたい -->
+  </div>
+  <div class="flex flex-col items-center mx-8">
+    <QRCode value="https://www.team-lab.com/recruit/" :size="120" render-as="svg"/>
+  </div>
+</div>
 
 <!--
-というか、factの文字サイズを小さくするのが良いのかも
+QRコードを表示したい
+TODO: リンク差し替え
 -->

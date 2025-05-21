@@ -37,7 +37,7 @@ const colorscheme = computed(() => {
 /* cover slide type */
 .slidev-layout.section h1 {
   font-family: var(--neversink-title-font);
-  font-weight: 500;
+  font-weight: 600;
   font-size: 2.8em;
   padding-bottom: 0.3rem;
   line-height: normal;
@@ -45,14 +45,14 @@ const colorscheme = computed(() => {
 
 .slidev-layout.section h2 {
   font-family: var(--neversink-title-font);
-  font-weight: 500;
+  font-weight: 600;
   font-size: 2.5em;
   line-height: normal;
 }
 
 .slidev-layout.section h3 {
   font-family: var(--neversink-title-font);
-  font-weight: 500;
+  font-weight: 600;
   font-size: 1.9em;
   line-height: normal;
 }
@@ -63,7 +63,7 @@ const colorscheme = computed(() => {
 }
 
 .slidev-layout.section strong {
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .slidev-layout.section h1 + p {
