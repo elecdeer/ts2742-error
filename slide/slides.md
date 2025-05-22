@@ -92,15 +92,9 @@ class: bg-tlb-yellow
 
 # 実際の開発で見た例
 
-`@mantine/core`の`createPolymorphicComponent`を使ったら、
+`SomeComponent.stories.tsx`で発生
 
--> `'SomeComponent'の推論された型には、'○○○/csstype/○○○○○○○'への参照なしで名前を付けることはできません。`
-
-<br>
-
-`@storybook/experimental-addon-test`の`fn`をラップした関数を作ったら、
-
--> `'extendedFn'の推論された型には、@vitest/spyへの参照なしで名前を付けることはできません。`
+-> `'meta'の推論された型には、'.pnpm/csstype@3.1.3/node_modules/csstype'への参照なしで名前を付けることはできません。`
 
 <!--
 1:00位？
@@ -530,11 +524,6 @@ TypeScriptを共に書いてくれるメンバーを募集中です！
 
   </div>
   <div class="flex flex-col items-center mx-8">
-    <QRCode value="https://www.team-lab.com/recruit/" :size="120" render-as="svg"/>
+    <QRCode value="https://www.team-lab.com/recruit/?utm_source=TSKaigi&utm_medium=QRcode&utm_campaign=slide" :size="120" render-as="svg"/>
   </div>
 </div>
-
-<!--
-QRコードを表示したい
-TODO: リンク差し替え
--->
